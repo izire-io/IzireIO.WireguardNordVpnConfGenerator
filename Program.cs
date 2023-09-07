@@ -119,7 +119,7 @@ PersistentKeepalive = {peerPersistentKeepAlive}
 
     var destinationFilePath = Path.Combine(destinationDirectoryPath, fileName);
     File.WriteAllText(destinationFilePath, fileContent);
-    Console.WriteLine("Generated file: " + destinationDirectoryPath);
+    Console.WriteLine("Generated file: " + destinationFilePath);
 
     generatedFileCount++;
 }
