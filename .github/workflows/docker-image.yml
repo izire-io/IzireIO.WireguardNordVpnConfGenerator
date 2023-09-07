@@ -1,0 +1,33 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Login to GitHub Container Registry
+      run: echo "${{ secrets.GH_PKG_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Build the Docker image
+      run: |
+        IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/wireguard-nordvpn-conf-generator
+        TAG_NAME=$(date +%s)
+
+        docker build . \
+          --file Dockerfile \
+          --tag $IMAGE_NAME:$TAG_NAME \
+          --build-arg GH_PKG_PAT=${{ secrets.GH_PKG_PAT }} \
+          --build-arg GH_PKG_USERNAME=${{ secrets.GH_PKG_USERNAME }}
+
+        docker push $IMAGE_NAME:$TAG_NAME

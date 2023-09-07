@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "IzireIO.WireguardNordVpnConfGenerator": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
