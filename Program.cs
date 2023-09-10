@@ -2,10 +2,10 @@
 using IzireIO.NordVpn.Api.Client.Enum;
 
 #region Parameter retrieval
-var nordVpnWireguardPrivateKey = Environment.GetEnvironmentVariable("IIO_WNCG_WIREGUARD_PRIVATE_KEY") ?? "TEST"; // TODO: Remove before commit
+var nordVpnWireguardPrivateKey = Environment.GetEnvironmentVariable("IIO_WNCG_WIREGUARD_PRIVATE_KEY") ?? "";
 if (string.IsNullOrEmpty(nordVpnWireguardPrivateKey))
 {
-    Console.Error.WriteLine("Please set the IIO_WNCG_WIREGUARD_PRIVATE_KEY environment variable.");
+    Console.Error.WriteLine("Missing IIO_WNCG_WIREGUARD_PRIVATE_KEY environment variable.");
     Environment.ExitCode = 1;
     return;
 }
@@ -26,8 +26,8 @@ foreach(var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIO
 }
 var selectedGroups = Environment.GetEnvironmentVariable("IIO_WNCG_GROUPS")?.Split(",").Select(g => g.Trim()) ?? Array.Empty<string>();
 
-var destinationDirectoryPath = Environment.GetEnvironmentVariable("IIO_WNCG_DESTINATION_DIRECTORY_PATH") ?? "./wireguardConfigurations";
-var preferLeastLoaded = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PREFER_LEAST_LOADED_SERVERS"), out bool parsedPreferLeastLoaded) && parsedPreferLeastLoaded;
+var destinationDirectoryPath = Environment.GetEnvironmentVariable("IIO_WNCG_DESTINATION_DIRECTORY_PATH") ?? ".";
+var preferLeastLoaded = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PREFER_LEAST_LOADED_SERVERS") ?? "true", out bool parsedPreferLeastLoaded) && parsedPreferLeastLoaded;
 string fileNameFormat = Environment.GetEnvironmentVariable("IIO_WNCG_FILE_NAME_FORMAT") ?? "wg{n}.conf";
 var numberOfRequestedFiles = int.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_NUMBER_OF_REQUESTED_FILES"), out int parsedNumberOfGeneratedFiles)
     ? parsedNumberOfGeneratedFiles
@@ -35,13 +35,27 @@ var numberOfRequestedFiles = int.TryParse(Environment.GetEnvironmentVariable("II
 
 var interfaceAddress = Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_ADDRESS") ?? "10.5.0.2/32";
 var interfaceDns = Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_DNS") ?? "103.86.96.100, 103.86.99.100";
-
+var interfaceDisableRoutes = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_DISABLE_ROUTE"), out bool parsedEnableRoutes) && parsedEnableRoutes;
 var peerAllowedIps = Environment.GetEnvironmentVariable("IIO_WNCG_PEER_ALLOWED_IPS") ?? "0.0.0.0/0";
 int peerPersistentKeepAlive = int.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PEER_PERSISTENT_KEEP_ALIVE"), out int parsedPeerPersistentKeepAlive)
     ? parsedPeerPersistentKeepAlive
     : 25;
-
 #endregion
+
+Console.WriteLine($@"Configuration:
+    IIO_WNCG_WIREGUARD_PRIVATE_KEY: {(nordVpnWireguardPrivateKey.Length > 5 ? nordVpnWireguardPrivateKey.Substring(0, 5) : "****")}...
+    IIO_WNCG_LOCATIONS: {string.Join(", ", selectedLocations)}
+    IIO_WNCG_GROUPS: {string.Join(", ", selectedGroups)}
+    IIO_WNCG_DESTINATION_DIRECTORY_PATH: {destinationDirectoryPath}
+    IIO_WNCG_PREFER_LEAST_LOADED_SERVERS: {preferLeastLoaded}
+    IIO_WNCG_FILE_NAME_FORMAT: {fileNameFormat}
+    IIO_WNCG_NUMBER_OF_REQUESTED_FILES: {numberOfRequestedFiles}
+    IIO_WNCG_INTERFACE_ADDRESS: {interfaceAddress}
+    IIO_WNCG_INTERFACE_DNS: {interfaceDns}
+    IIO_WNCG_INTERFACE_DISABLE_ROUTE: {interfaceDisableRoutes}
+    IIO_WNCG_PEER_ALLOWED_IPS: {peerAllowedIps}
+    IIO_WNCG_PEER_PERSISTENT_KEEP_ALIVE: {peerPersistentKeepAlive}
+");
 
 var nordvpnClient = new NordVpnApiClient();
 
@@ -103,6 +117,7 @@ PrivateKey = {nordVpnWireguardPrivateKey}
 ListenPort = 51820
 Address = {interfaceAddress}
 DNS = {interfaceDns}
+Table = {(interfaceDisableRoutes ? "off" : "on")}
 
 [Peer]
 PublicKey = {wireguardPublicKey}
@@ -119,7 +134,16 @@ PersistentKeepalive = {peerPersistentKeepAlive}
 
     var destinationFilePath = Path.Combine(destinationDirectoryPath, fileName);
     File.WriteAllText(destinationFilePath, fileContent);
-    Console.WriteLine("Generated file: " + destinationFilePath);
+    Console.WriteLine(@$"----------
+Generated file: {destinationFilePath}
+    Name:           {selectedEndpoint.Name}
+    Endpoint:       {selectedEndpoint.Hostname}
+    Country:        {selectedEndpoint.Locations.FirstOrDefault()?.Country?.Id.ToString() ?? "unknown"}
+    Load:           {selectedEndpoint.Load}
+    Groups:         {string.Join(", ", selectedEndpoint.Groups.Select(g => g.Title))}
+    Services:       {string.Join(", ", selectedEndpoint.Services.Select(s => s.Name))}
+    Locations:      {string.Join(", ", selectedEndpoint.Locations.Select(l => l.Country.Name))}
+");
 
     generatedFileCount++;
 }
