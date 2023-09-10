@@ -117,7 +117,7 @@ PrivateKey = {nordVpnWireguardPrivateKey}
 ListenPort = 51820
 Address = {interfaceAddress}
 DNS = {interfaceDns}
-Table = {(interfaceDisableRoutes ? "off" : "on")}
+{(interfaceDisableRoutes ? "Table = off" : "")}
 
 [Peer]
 PublicKey = {wireguardPublicKey}
