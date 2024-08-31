@@ -3,6 +3,50 @@ A simple program to generate wireguard configuration files using NordVPN API.
 
 ## Configuration
 
+### Get NordVPN API Credentials
+
+Reference: https://gist.github.com/bluewalk/7b3db071c488c82c604baf76a42eaad3
+
+1. [Install Nord VPN on Linux](https://support.nordvpn.com/hc/en-us/articles/20196094470929-Installing-NordVPN-on-Linux-distributions)
+
+    ```bash
+    sh <(wget -qO - https://downloads.nordcdn.com/apps/linux/install.sh)
+    ```
+
+    As root:
+
+    ```bash
+    groupadd nordvpn
+    usermod -aG nordvpn $USER
+    ```
+
+    where $USER is your non-root username.
+
+    Restart your computer:
+
+    ```bash
+    shutdown -r now
+    ```
+
+2. Login to NordVPN:
+
+    ```bash
+    nordvpn login
+    ```
+
+3. Install wireguard
+
+    ```bash
+    sudo apt-get install wireguard-tools
+    ```
+4. Get the NordVPN private key
+
+    ```bash
+    wg show nrdlynx private-key
+    ```
+
+### Environment Variables
+
 | **Name**                                             | **Description**                                                                                                                                                                                                                                                                                                                                                                                 |
 |------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `IIO_WNCG_WIREGUARD_PRIVATE_KEY`                     | (**Mandatory**) string: Base64 encoded           <br> Peer private key. Can be obtained using few CLI commands in a Linux environment.<br>See document: https://gist.github.com/bluewalk/7b3db071c488c82c604baf76a42eaad3                                                                                                                                                                       |

@@ -11,7 +11,7 @@ if (string.IsNullOrEmpty(nordVpnWireguardPrivateKey))
     return;
 }
 
-var preResolvHostname = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION") ?? "false", out bool parsedUseDirectIp) && parsedUseDirectIp;
+var preResolveHostname = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION") ?? "false", out bool parsedUseDirectIp) && parsedUseDirectIp;
 
 var selectedLocations = new List<CountryId>();
 foreach(var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS") ?? "Canada,UnitedStates").Split(","))
@@ -46,7 +46,7 @@ int peerPersistentKeepAlive = int.TryParse(Environment.GetEnvironmentVariable("I
 #endregion
 
 Console.WriteLine($@"Configuration:
-    IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION: {preResolvHostname}
+    IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION: {preResolveHostname}
     IIO_WNCG_WIREGUARD_PRIVATE_KEY: {(nordVpnWireguardPrivateKey.Length > 5 ? nordVpnWireguardPrivateKey.Substring(0, 5) : "****")}...
     IIO_WNCG_LOCATIONS: {string.Join(", ", selectedLocations)}
     IIO_WNCG_GROUPS: {string.Join(", ", selectedGroups)}
@@ -115,7 +115,7 @@ foreach (var selectedEndpoint in onlineFilteredWireguardEndpoints)
         continue;
     }
 
-    var hostname = preResolvHostname
+    var hostname = preResolveHostname
         ? Dns.GetHostEntry(selectedEndpoint.Hostname).AddressList.First().ToString()
         : selectedEndpoint.Hostname;
 
@@ -145,7 +145,7 @@ PersistentKeepalive = {peerPersistentKeepAlive}
     Console.WriteLine(@$"----------
 Generated file: {destinationFilePath}
     Name:           {selectedEndpoint.Name}
-    Endpoint:       {hostname} {(preResolvHostname ? $"(Resolved now from {selectedEndpoint.Hostname}" : "")}
+    Endpoint:       {hostname} {(preResolveHostname ? $"(Resolved now from {selectedEndpoint.Hostname}" : "")}
     Country:        {selectedEndpoint.Locations.FirstOrDefault()?.Country?.Id.ToString() ?? "unknown"}
     Load:           {selectedEndpoint.Load}
     Groups:         {string.Join(", ", selectedEndpoint.Groups.Select(g => g.Title))}
