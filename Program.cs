@@ -2,8 +2,25 @@
 using IzireIO.NordVpn.Api.Client.Enum;
 using System.Net;
 
+#region default vars
+var nordVpnWireguardPrivateKey = "";
+var preResolveHostname = false;
+var selectedLocations = new List<CountryId>() { CountryId.Japan };
+var selectedGroups = new List<string>();
+var destinationDirectoryPath = ".";
+var preferLeastLoaded = true;
+var fileNameFormat = "wg{n}.conf";
+var numberOfRequestedFiles = 1;
+var interfaceAddress = "10.5.0.2/32";
+var interfaceDns = "103.86.96.100, 103.86.99.100";
+var interfaceDisableRoutes = false;
+var peerAllowedIps = "0.0.0.0/0";
+var peerPersistentKeepAlive = 25;
+#endregion
+
+
 #region Parameter retrieval
-var nordVpnWireguardPrivateKey = Environment.GetEnvironmentVariable("IIO_WNCG_WIREGUARD_PRIVATE_KEY") ?? "";
+nordVpnWireguardPrivateKey = Environment.GetEnvironmentVariable("IIO_WNCG_WIREGUARD_PRIVATE_KEY") ?? nordVpnWireguardPrivateKey;
 if (string.IsNullOrEmpty(nordVpnWireguardPrivateKey))
 {
     Console.Error.WriteLine("Missing IIO_WNCG_WIREGUARD_PRIVATE_KEY environment variable.");
@@ -11,10 +28,10 @@ if (string.IsNullOrEmpty(nordVpnWireguardPrivateKey))
     return;
 }
 
-var preResolveHostname = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION") ?? "false", out bool parsedUseDirectIp) && parsedUseDirectIp;
+preResolveHostname = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION") ?? "false", out bool parsedUseDirectIp) && parsedUseDirectIp;
 
-var selectedLocations = new List<CountryId>();
-foreach(var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS") ?? "Canada,UnitedStates").Split(","))
+selectedLocations = new List<CountryId>();
+foreach(var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS")?.Split(",") ?? []))
 {
     var normalizedRawLocation = rawLocation.Trim();
     if(Enum.TryParse(typeof(CountryId), normalizedRawLocation, true, out object? location) && location != null)
@@ -27,21 +44,21 @@ foreach(var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIO
         Console.WriteLine($"Failed to parse location: '{normalizedRawLocation}'");
     }
 }
-var selectedGroups = Environment.GetEnvironmentVariable("IIO_WNCG_GROUPS")?.Split(",").Select(g => g.Trim()) ?? Array.Empty<string>();
+selectedGroups = Environment.GetEnvironmentVariable("IIO_WNCG_GROUPS")?.Split(",").Select(g => g.Trim()).ToList() ?? selectedGroups;
 
-var destinationDirectoryPath = Environment.GetEnvironmentVariable("IIO_WNCG_DESTINATION_DIRECTORY_PATH") ?? ".";
-var preferLeastLoaded = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PREFER_LEAST_LOADED_SERVERS") ?? "true", out bool parsedPreferLeastLoaded) && parsedPreferLeastLoaded;
-string fileNameFormat = Environment.GetEnvironmentVariable("IIO_WNCG_FILE_NAME_FORMAT") ?? "wg{n}.conf";
-var numberOfRequestedFiles = int.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_NUMBER_OF_REQUESTED_FILES"), out int parsedNumberOfGeneratedFiles)
+destinationDirectoryPath = Environment.GetEnvironmentVariable("IIO_WNCG_DESTINATION_DIRECTORY_PATH") ?? destinationDirectoryPath;
+preferLeastLoaded = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PREFER_LEAST_LOADED_SERVERS") ?? "true", out bool parsedPreferLeastLoaded) && parsedPreferLeastLoaded;
+fileNameFormat = Environment.GetEnvironmentVariable("IIO_WNCG_FILE_NAME_FORMAT") ?? fileNameFormat;
+numberOfRequestedFiles = int.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_NUMBER_OF_REQUESTED_FILES"), out int parsedNumberOfGeneratedFiles)
     ? parsedNumberOfGeneratedFiles
-    : 1;
+    : numberOfRequestedFiles;
 
-var interfaceAddress = Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_ADDRESS") ?? "10.5.0.2/32";
-var interfaceDns = Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_DNS") ?? "103.86.96.100, 103.86.99.100";
-var interfaceDisableRoutes = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_DISABLE_ROUTE"), out bool parsedEnableRoutes) && parsedEnableRoutes;
-var peerAllowedIps = Environment.GetEnvironmentVariable("IIO_WNCG_PEER_ALLOWED_IPS") ?? "0.0.0.0/0";
-int peerPersistentKeepAlive = int.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PEER_PERSISTENT_KEEP_ALIVE"), out int parsedPeerPersistentKeepAlive)
-    ? parsedPeerPersistentKeepAlive
+interfaceAddress = Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_ADDRESS") ?? interfaceAddress;
+interfaceDns = Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_DNS") ?? interfaceDns;
+interfaceDisableRoutes = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_INTERFACE_DISABLE_ROUTE"), out bool parsedEnableRoutes) && parsedEnableRoutes;
+peerAllowedIps = Environment.GetEnvironmentVariable("IIO_WNCG_PEER_ALLOWED_IPS") ?? peerAllowedIps;
+peerPersistentKeepAlive = int.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PEER_PERSISTENT_KEEP_ALIVE"), out int parsedPeerPersistentKeepAlive)
+    ? peerPersistentKeepAlive
     : 25;
 #endregion
 
