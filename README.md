@@ -42,7 +42,7 @@ Reference: https://gist.github.com/bluewalk/7b3db071c488c82c604baf76a42eaad3
 4. Get the NordVPN private key
 
     ```bash
-    wg show nrdlynx private-key
+    sudo wg show nordlynx private-key
     ```
 
 ### Environment Variables
