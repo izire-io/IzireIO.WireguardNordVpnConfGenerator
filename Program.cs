@@ -30,8 +30,10 @@ if (string.IsNullOrEmpty(nordVpnWireguardPrivateKey))
 
 preResolveHostname = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION") ?? "false", out bool parsedUseDirectIp) && parsedUseDirectIp;
 
-selectedLocations = new List<CountryId>();
-foreach(var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS")?.Split(",") ?? []))
+if (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS") != null)
+{
+    selectedLocations.Clear();
+    foreach (var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS")?.Split(",") ?? []))
 {
     var normalizedRawLocation = rawLocation.Trim();
     if(Enum.TryParse(typeof(CountryId), normalizedRawLocation, true, out object? location) && location != null)
@@ -43,6 +45,7 @@ foreach(var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIO
     {
         Console.WriteLine($"Failed to parse location: '{normalizedRawLocation}'");
     }
+}
 }
 selectedGroups = Environment.GetEnvironmentVariable("IIO_WNCG_GROUPS")?.Split(",").Select(g => g.Trim()).ToList() ?? selectedGroups;
 
