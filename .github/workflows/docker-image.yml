@@ -31,3 +31,9 @@ jobs:
           --build-arg GH_PKG_USERNAME=${{ secrets.GH_PKG_USERNAME }}
 
         docker push $IMAGE_NAME:$TAG_NAME
+
+        # Tag the image as latest
+        docker tag $IMAGE_NAME:$TAG_NAME $IMAGE_NAME:latest
+
+        # Push the latest tag
+        docker push $IMAGE_NAME:latest
