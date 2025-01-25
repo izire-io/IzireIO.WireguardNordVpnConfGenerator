@@ -18,7 +18,6 @@ var peerAllowedIps = "0.0.0.0/0";
 var peerPersistentKeepAlive = 25;
 #endregion
 
-
 #region Parameter retrieval
 nordVpnWireguardPrivateKey = Environment.GetEnvironmentVariable("IIO_WNCG_WIREGUARD_PRIVATE_KEY") ?? nordVpnWireguardPrivateKey;
 if (string.IsNullOrEmpty(nordVpnWireguardPrivateKey))
