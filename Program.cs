@@ -4,9 +4,9 @@ using System.Net;
 
 #region default vars
 var nordVpnWireguardPrivateKey = "";
-var preResolveHostname = false;
-var selectedLocations = new List<CountryId>() { CountryId.Japan };
-var selectedGroups = new List<string>();
+var preResolveHostnameIfNoProvidedIpFound = false;
+var selectedLocations = new List<CountryId>() { CountryId.Canada };
+var selectedGroups = new List<string>() { };
 var destinationDirectoryPath = ".";
 var preferLeastLoaded = true;
 var fileNameFormat = "wg{n}.conf";
@@ -27,24 +27,24 @@ if (string.IsNullOrEmpty(nordVpnWireguardPrivateKey))
     return;
 }
 
-preResolveHostname = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION") ?? "false", out bool parsedUseDirectIp) && parsedUseDirectIp;
+preResolveHostnameIfNoProvidedIpFound = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION") ?? "false", out bool parsedUseDirectIp) && parsedUseDirectIp;
 
 if (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS") != null)
 {
     selectedLocations.Clear();
     foreach (var rawLocation in (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS")?.Split(",") ?? []))
-{
-    var normalizedRawLocation = rawLocation.Trim();
-    if(Enum.TryParse(typeof(CountryId), normalizedRawLocation, true, out object? location) && location != null)
     {
-        Console.WriteLine($"Location found: '{normalizedRawLocation}'");
-        selectedLocations.Add((CountryId)location);
+        var normalizedRawLocation = rawLocation.Trim();
+        if (Enum.TryParse(typeof(CountryId), normalizedRawLocation, true, out object? location) && location != null)
+        {
+            Console.WriteLine($"Location found: '{normalizedRawLocation}'");
+            selectedLocations.Add((CountryId)location);
+        }
+        else
+        {
+            Console.WriteLine($"Failed to parse location: '{normalizedRawLocation}'");
+        }
     }
-    else
-    {
-        Console.WriteLine($"Failed to parse location: '{normalizedRawLocation}'");
-    }
-}
 }
 selectedGroups = Environment.GetEnvironmentVariable("IIO_WNCG_GROUPS")?.Split(",").Select(g => g.Trim()).ToList() ?? selectedGroups;
 
@@ -65,8 +65,8 @@ peerPersistentKeepAlive = int.TryParse(Environment.GetEnvironmentVariable("IIO_W
 #endregion
 
 Console.WriteLine($@"Configuration:
-    IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION: {preResolveHostname}
-    IIO_WNCG_WIREGUARD_PRIVATE_KEY: {(nordVpnWireguardPrivateKey.Length > 5 ? nordVpnWireguardPrivateKey.Substring(0, 5) : "****")}...
+    IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION: {preResolveHostnameIfNoProvidedIpFound}
+    IIO_WNCG_WIREGUARD_PRIVATE_KEY: {(nordVpnWireguardPrivateKey.Length > 5 ? nordVpnWireguardPrivateKey[..5] : "****")}...
     IIO_WNCG_LOCATIONS: {string.Join(", ", selectedLocations)}
     IIO_WNCG_GROUPS: {string.Join(", ", selectedGroups)}
     IIO_WNCG_DESTINATION_DIRECTORY_PATH: {destinationDirectoryPath}
@@ -91,7 +91,7 @@ var onlineFilteredWireguardEndpoints = allNordVpnEndpoints
 
 if (selectedGroups.Any())
 {
-    onlineFilteredWireguardEndpoints = onlineFilteredWireguardEndpoints.Where(e => e.Groups.Any(g => selectedGroups.Contains(g.Title)));
+    onlineFilteredWireguardEndpoints = onlineFilteredWireguardEndpoints.Where(e => e.Groups.Any(g => selectedGroups.Contains(g.Title) || selectedGroups.Contains(g.Type.Identifier)));
 }
 
 string selectedCountryDisplay = "all";
@@ -134,9 +134,11 @@ foreach (var selectedEndpoint in onlineFilteredWireguardEndpoints)
         continue;
     }
 
-    var hostname = preResolveHostname
-        ? Dns.GetHostEntry(selectedEndpoint.Hostname).AddressList.First().ToString()
-        : selectedEndpoint.Hostname;
+    // prefer explicit IP from endpoint if present, otherwise use hostname (or pre-resolve)
+    var hostname = selectedEndpoint.Ips?.FirstOrDefault()?.Ip?.Ip
+        ?? (preResolveHostnameIfNoProvidedIpFound
+            ? Dns.GetHostEntry(selectedEndpoint.Hostname).AddressList.First().ToString()
+            : selectedEndpoint.Hostname);
 
     var fileContent = $@"
 [Interface]
@@ -164,12 +166,14 @@ PersistentKeepalive = {peerPersistentKeepAlive}
     Console.WriteLine(@$"----------
 Generated file: {destinationFilePath}
     Name:           {selectedEndpoint.Name}
-    Endpoint:       {hostname} {(preResolveHostname ? $"(Resolved now from {selectedEndpoint.Hostname}" : "")}
+    Endpoint:       {hostname} {(preResolveHostnameIfNoProvidedIpFound ? $"(Resolved now from {selectedEndpoint.Hostname}" : "")}
     Country:        {selectedEndpoint.Locations.FirstOrDefault()?.Country?.Id.ToString() ?? "unknown"}
     Load:           {selectedEndpoint.Load}
     Groups:         {string.Join(", ", selectedEndpoint.Groups.Select(g => g.Title))}
     Services:       {string.Join(", ", selectedEndpoint.Services.Select(s => s.Name))}
     Locations:      {string.Join(", ", selectedEndpoint.Locations.Select(l => l.Country.Name))}
+    Dns:            {interfaceDns}
+    VPN Groups:     {string.Join(", ", selectedEndpoint.Groups.Select(g => g.Title))}
 ");
 
     generatedFileCount++;

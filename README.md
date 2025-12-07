@@ -34,12 +34,19 @@ Reference: https://gist.github.com/bluewalk/7b3db071c488c82c604baf76a42eaad3
     nordvpn login
     ```
 
-3. Install wireguard
+3. Connect to a server (any server):
+
+    ```bash
+    nordvpn connect
+    ```
+
+4. Install wireguard
 
     ```bash
     sudo apt-get install wireguard-tools
     ```
-4. Get the NordVPN private key
+
+5. Get the NordVPN private key
 
     ```bash
     sudo wg show nordlynx private-key
@@ -50,7 +57,7 @@ Reference: https://gist.github.com/bluewalk/7b3db071c488c82c604baf76a42eaad3
 | **Name**                                             | **Description**                                                                                                                                                                                                                                                                                                                                                                                 |
 |------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `IIO_WNCG_WIREGUARD_PRIVATE_KEY`                     | (**Mandatory**) string: Base64 encoded           <br> Peer private key. Can be obtained using few CLI commands in a Linux environment.<br>See document: https://gist.github.com/bluewalk/7b3db071c488c82c604baf76a42eaad3                                                                                                                                                                       |
-| `IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION` | (Opt) string, default: false <br> Resolve NordVPN DNS during configuration file creation. Then use IP instead of FQDN to generate file                                                                                                                                                                                                                                                          |
+| `IIO_WNCG_PRE_RESOLVE_HOSTNAME_DURING_CONF_CREATION` | (Opt) string, default: false <br> If there is no provided IP by NordVPN, we resolve NordVPN provided hostname's ip during configuration file creation.                                                                                                                                                                                                                                                          |
 | `IIO_WNCG_LOCATIONS`                                 | (Opt) string, default: None (comma separated values)   <br> Country name(s) to filter selected vpn servers (ex: `Canada, UnitedStates`)                                                                                                                                                                                                                                                         |
 | `IIO_WNCG_PREFER_LEAST_LOADED_SERVERS`               | (Opt) boolean, default: `true`                        <br> If true, we will sort vpn servers by load in an ascending manner.<br>This is to select least loaded servers first.                                                                                                                                                                                                                   |
 | `IIO_WNCG_DESTINATION_DIRECTORY_PATH`                | (Opt) string, default: `.`                            <br> Destination directory for generated files                                                                                                                                                                                                                                                                                            |
