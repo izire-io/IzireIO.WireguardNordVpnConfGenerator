@@ -7,10 +7,11 @@ var nordVpnWireguardPrivateKey = "";
 var preResolveHostnameIfNoProvidedIpFound = false;
 var selectedLocations = new List<CountryId>() { CountryId.Canada };
 var selectedGroups = new List<string>() { };
+var ignoredGroups = new List<string>() { "Dedicated IP" };
 var destinationDirectoryPath = ".";
 var preferLeastLoaded = true;
 var fileNameFormat = "wg{n}.conf";
-var numberOfRequestedFiles = 1;
+var numberOfRequestedFiles = 10;
 var interfaceAddress = "10.5.0.2/32";
 var interfaceDns = "103.86.96.100, 103.86.99.100";
 var interfaceDisableRoutes = false;
@@ -47,6 +48,7 @@ if (Environment.GetEnvironmentVariable("IIO_WNCG_LOCATIONS") != null)
     }
 }
 selectedGroups = Environment.GetEnvironmentVariable("IIO_WNCG_GROUPS")?.Split(",").Select(g => g.Trim()).ToList() ?? selectedGroups;
+ignoredGroups = Environment.GetEnvironmentVariable("IIO_WNCG_IGNORED_GROUPS")?.Split(",").Select(g => g.Trim()).ToList() ?? ignoredGroups;
 
 destinationDirectoryPath = Environment.GetEnvironmentVariable("IIO_WNCG_DESTINATION_DIRECTORY_PATH") ?? destinationDirectoryPath;
 preferLeastLoaded = bool.TryParse(Environment.GetEnvironmentVariable("IIO_WNCG_PREFER_LEAST_LOADED_SERVERS") ?? "true", out bool parsedPreferLeastLoaded) && parsedPreferLeastLoaded;
