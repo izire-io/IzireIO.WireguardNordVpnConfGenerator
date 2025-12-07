@@ -71,6 +71,7 @@ Console.WriteLine($@"Configuration:
     IIO_WNCG_WIREGUARD_PRIVATE_KEY: {(nordVpnWireguardPrivateKey.Length > 5 ? nordVpnWireguardPrivateKey[..5] : "****")}...
     IIO_WNCG_LOCATIONS: {string.Join(", ", selectedLocations)}
     IIO_WNCG_GROUPS: {string.Join(", ", selectedGroups)}
+    IIO_WNCG_IGNORED_GROUPS: {string.Join(", ", ignoredGroups)}
     IIO_WNCG_DESTINATION_DIRECTORY_PATH: {destinationDirectoryPath}
     IIO_WNCG_PREFER_LEAST_LOADED_SERVERS: {preferLeastLoaded}
     IIO_WNCG_FILE_NAME_FORMAT: {fileNameFormat}
@@ -91,9 +92,14 @@ var onlineFilteredWireguardEndpoints = allNordVpnEndpoints
         .Where(e => e.Technologies.Any(t => t.Id == ProtocolId.Wireguard))
         .Where(e => e.Technologies.Any(t => t.Pivot.Status == Status.Online));
 
-if (selectedGroups.Any())
+if (selectedGroups.Count != 0)
 {
-    onlineFilteredWireguardEndpoints = onlineFilteredWireguardEndpoints.Where(e => e.Groups.Any(g => selectedGroups.Contains(g.Title) || selectedGroups.Contains(g.Type.Identifier)));
+    onlineFilteredWireguardEndpoints = onlineFilteredWireguardEndpoints.Where(e => e.Groups.Any(g => selectedGroups.Contains(g.Title)));
+}
+
+if (ignoredGroups.Count != 0)
+{
+    onlineFilteredWireguardEndpoints = onlineFilteredWireguardEndpoints.Where(e => e.Groups.Any(g => ignoredGroups.Contains(g.Title)) == false);
 }
 
 string selectedCountryDisplay = "all";
